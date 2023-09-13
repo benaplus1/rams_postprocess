@@ -510,7 +510,6 @@ def postprocess(prepath, postpath, filetype, gridprops, interptype, atop, userpr
 # if __name__ == "__main__":
 
 starttime = perf_counter()
-print("Test text for commit!")
 isuserfile = input("Is there a file you'd like to use for post-processing settings? Yes or No? ")
 if isuserfile.strip().upper() not in ["YES", "NO"]:
     raise Exception("Answer the question, Flatlander!")
