@@ -32,7 +32,7 @@ class outvar:
         self.unitfactor = unitfactor
         self.decnum = decnum
         self.units = units
-        self.data = data #Assigned later in postprocess_dask2.py
+        self.data = data #Assigned later in postprocess.py
 
     def __str__(self):
         return(f"Variable: {self.longname}. CF Standard Name: {self.stdname}. RAMS-Format Name: {self.ramsname}; Verbose Name: {self.varname}; Offline Variable: {self.offline}; Variable Dimensions: {self.vartype}; Vector Variable: {self.vector}; Other Variables Used to Calculate it: {self.invar}; Factor by Which This Variable is Multiplied at the End to Get Final Units: {self.unitfactor}; Number of Decimals Used to Store Variable: {self.decnum}; Units of Variable: {self.units};")

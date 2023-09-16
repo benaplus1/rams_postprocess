@@ -5,7 +5,6 @@
 
 
 import xarray as xr
-# import h5py
 import pickle
 import h5netcdf
 import numpy as np
@@ -13,16 +12,13 @@ import pandas as pd
 from time import perf_counter
 from datetime import datetime, timedelta
 from pandas import date_range
-# from multiprocessing import Pool
 from concurrent.futures import ProcessPoolExecutor
-from functools import partial #Think about how to make partial functions instead of the "postprocess_onearg" approach, which feels kind of clunky.
-# from dask.distributed import Client, progress
+from functools import partial
 from interplib import get_gprops, gen_coords_cart, get_zlvs_sigma, get_zact, gen_coords_sigma, gen_coords_pressure, get_cartw, get_sigw, get_presw, get_cartu, get_sigu, get_presu, get_cartv, get_sigv, get_presv, get_cartscl_multiprocess, get_presscl_multiprocess, get_sigscl_multiprocess
 from varinit import outvar, fillvarlist, gen_vardict
 from derivedvars import get_derivedvars
 
 import os
-
 def read_userfile(fpath):
     with open(fpath, "r") as userfile:
         mlist = userfile.read().splitlines()
@@ -308,8 +304,10 @@ def cartinterp(gridprops, top2d, atop, rawfile, vardict):
         print(f"Interpolating UP --> {[vardict['UP'].varname, vardict['UP'].ramsname][rnameflag]}")
         vardict["UP"].data = get_cartu(rawfile["UP"].values, gridprops, rawzfull, ccoords["z"].values)
     if "VC" in vardict.keys():
+        print(f"Interpolating VC --> {[vardict['VC'].varname, vardict['VC'].ramsname][rnameflag]}")
         vardict["VC"].data = get_cartv(rawfile["VC"].values, gridprops, rawzfull, ccoords["z"].values)
     if "VP" in vardict.keys():
+        print(f"Interpolating VP --> {[vardict['VP'].varname, vardict['VP'].ramsname][rnameflag]}")
         vardict["VP"].data = get_cartv(rawfile["VP"].values, gridprops, rawzfull, ccoords["z"].values)
 
     st = perf_counter()
@@ -432,7 +430,7 @@ def postprocess(prepath, postpath, filetype, gridprops, interptype, atop, userpr
     # rawzfull = get_zact(gridprops, top2d)
     datavarlist = list(rawfile.data_vars)
     gridprops["glat"] = rawfile["GLAT"].values; gridprops["glon"] = rawfile["GLON"].values
-    if uservars.strip("* ").lower() == "all":
+    if uservars == "all":
         uservars = datavarlist
 
     varlist = fillvarlist(uservars, datavarlist)
@@ -520,7 +518,7 @@ if isuserfile.strip().upper() == "YES":
     userdict = read_userfile(userfpath)
     folderpath = userdict["folderpath"]; postpath = userdict["postpath"]; ramsinpath = userdict["ramsinpath"]
     interptype = userdict["interptype"]; atop = userdict["atop"]; userpreslvs = userdict["userpreslvs"]
-    instime = userdict["instime"]; inetime = userdict["inetime"]; ngrid = int(userdict["ngrid"]); uservars = userdict["uservars"]
+    instime = userdict["instime"]; inetime = userdict["inetime"]; ngrid = int(userdict["ngrid"]); uservarin = userdict["uservars"]
     rnameflag = userdict["rnameflag"]; derivvarin = userdict["derivvars"]; ywininput = userdict["ywininput"]; xwininput = userdict["xwininput"]
     kernname = userdict["kernname"]; filetype = userdict["filetype"]
 
@@ -532,7 +530,7 @@ elif isuserfile.strip().upper() == "NO":
     instime = input("Enter the analysis start time in YYYY-mm-dd-HHMMSS format: ")
     inetime = input("Enter the analysis end time in YYYY-mm-dd-HHMMSS format: ")
     ngrid = int(input("Enter the Grid Number to post-process: ")) #For now, can only do one grid at a time; if you want to analyze a fine and coarse grid, will need to run this twice with different ngrid
-    uservars = input("Enter the list of RAMS variables you'd like to process, as comma-separated entries, or put *all* to process all available variables: ")
+    uservarin = input("Enter the list of RAMS variables you'd like to process, as comma-separated entries, or put *all* to process all available variables: ")
     rnameflag = input("Use the *RAMS* variable names, or *verbose* variable names in post-processed NetCDF files? ")
     derivvarin = input("Enter the list of derived variables you'd like to output, as comma-separated entries (a full list of available derived variables is avilable in comments at the top of derivedvars.py). Leave blank to not output any derived quantities. Enter *all* to output all derived quantities available for your output file. Enter *nomomentum* to output all variables except momentum budgets, which are quite slow to calculate: ")
 if not os.path.exists(folderpath):
@@ -575,8 +573,10 @@ ftype = filetype.strip("* ").upper()
 gridprops = get_gprops(headpath, ngrid)
 numworkers = round(2*10**8/(gridprops["nx"]*gridprops["ny"]*gridprops["nz"]))
 timedict = get_timedict(ramsinpath, ngrid)
-if uservars.strip("* ") != "all":
-    uservars = [st.strip().upper() for st in uservars.split(",")]
+if uservarin.strip("* ") != "all":
+    uservars = [st.strip().upper() for st in uservarin.split(",")]
+else:
+    uservars = "all"
 if rnameflag.strip().upper() == "RAMS":
     rnameflag = 1
 elif rnameflag.strip().upper() == "VERBOSE":
@@ -601,9 +601,9 @@ elif derivvarin is not None:
     dvarnamedict = pickle.load(dvfile)
     dvfile.close()
     if rnameflag == 0:
-        derivvars = [dvarnamedict[st.strip()] for st in derivvars.split(",")] #This converts from the verbose derived variable names that will be output to the "RAMS-style" variable names used in the backend
+        derivvars = [dvarnamedict[st.strip()] for st in derivvarin.split(",")] #This converts from the verbose derived variable names that will be output to the "RAMS-style" variable names used in the backend
     elif rnameflag == 1:
-        derivvars = [st.strip().upper() for st in derivvars.split(",")]
+        derivvars = [st.strip().upper() for st in derivvarin.split(",")]
 
 if isuserfile.strip().upper() == "NO" and any(momvar in derivvars for momvar in ["RHOP", "BUOY_RHO", "BUOY_THETA", "BUOY_TEMP", "BUOY_VAP", "BUOY_COND", "BUOY_PPRIME", "VPPGF"]):
     ywininput = input("How many Y grid points do you want to use for horizontal averaging (for momentum budgets)? ")
@@ -616,7 +616,7 @@ else:
     window = None
 
 if isuserfile.strip().upper() == "NO":
-    kernname = "trikernel" #Change this to "domekernel", "gausskernel", "flatkernel", or "hornkernel" depending on which one you want. Kernel details are described derivedvars.get_rollvars
+    kernname = "trikernel" #Change this to "domekernel", "gausskernel", "flatkernel", or "hornkernel" depending on which one you want. Kernel details are described derivcalcs.get_rollvars
 hydropath = "hydroparams.csv"
 tlist = date_range(instime, inetime, freq = timedelta(seconds = timedict["afiletime"])).to_pydatetime()
 postpartial = partial(postprocess, prepath, postpath, ftype, gridprops, interptype, atop, userpreslvs, kernname, timedict, window, hydropath, uservars, derivvars, rnameflag)

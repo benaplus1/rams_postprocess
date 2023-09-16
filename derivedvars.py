@@ -3,14 +3,7 @@
 
 # In[2]:
 
-
-import xarray as xr
-import numpy as np
 import pandas as pd
-from time import perf_counter
-from astropy.convolution import convolve as apyconvolve #Turns out astropy has a really convenient function for doing rolling means with masked data
-from functools import partial
-from concurrent.futures import ProcessPoolExecutor
 from varinit import outvar
 from interplib import get_zact
 from derivcalcs import *
@@ -63,107 +56,47 @@ HailNum: NHP --> Number concentration of hail, in #/m^3
 PlateNum: NIPP --> Number concentration of plate ice, in #/m^3
 ColumnNum: NICP --> Number concentration of column ice, in #/m^3
 DendriteNum: NIDP --> Number concentration of dendrite ice, in #/m^3
-CloudWaterContent: CWC
-DrizzleWaterContent: DWC
-RainWaterContent: RWC
-PrisWaterContent: PWC
-SnowWaterContent: SWC
-AggWaterContent: AWC
-GraupelWaterContent: GWC
-HailWaterContent: HWC,
-PlateWaterContent: IPWC
-ColumnWaterContent: ICWC
-DendriteWaterContent: IDWC
-VertIntCloud: VIC
-VertIntDrizzle: VID
-VertIntRain: VIR
-VertIntPris: VIP
-VertIntSnow: VIS
-VertIntAgg: VIA
-VertIntGraupel: VIG
-VertIntHail: VIH
-VertIntPlate: VIIP
-VertIntColumn: VIIC
-VertIntDendrite: VIID
-VertIntLiq: VIL
-VertIntIce: VII
-CloudDiam: DCP
-DrizzleDiam: DDP
-RainDiam: DRP
-PrisDiam: DPP
-SnowDiam: DSP
-AggDiam: DAP
-GraupelDiam: DGP
-HailDiam: DHP
-RhoPrime: RHOP
-RhoBuoy: BUOY_RHO
-ThetaRhoBuoy: BUOY_THETA
-ThermalBuoy: BUOY_TEMP
-VapBuoy: BUOY_VAP
-CondBuoy: BUOY_COND
-PPrimeBuoy: BUOY_PPRIME
-VPPGF: VPPGF
+CloudWaterContent: CWC --> Volumetric water content of cloud droplets, in kg/m^3
+DrizzleWaterContent: DWC --> Volumetric water content of drizzle, in kg/m^3
+RainWaterContent: RWC --> Volumetric water content of rain, in kg/m^3
+PrisWaterContent: PWC --> Volumetric water content of pristine ice, in kg/m^3
+SnowWaterContent: SWC --> Volumetric water content of snow, in kg/m^3
+AggWaterContent: AWC --> Volumetric water content of aggregates, in kg/m^3
+GraupelWaterContent: GWC --> Volumetric water content of graupel, in kg/m^3
+HailWaterContent: HWC, --> Volumetric water content of hail, in kg/m^3
+PlateWaterContent: IPWC --> Volumetric water content of plate ice, in kg/m^3
+ColumnWaterContent: ICWC --> Volumetric water content of column ice, in kg/m^3
+DendriteWaterContent: IDWC --> Volumetric water content of dendrites, in kg/m^3
+VertIntCloud: VIC --> Mass per unit area of all cloud droplets in the column. Natural units are kg/m^2, but I've converted that to a liquid water equivalent depth in mm (like PWAT)
+VertIntDrizzle: VID --> Mass per unit area of all drizzle in the column. Natural units are kg/m^2, but I've converted that to a liquid water equivalent depth in mm (like PWAT)
+VertIntRain: VIR --> Mass per unit area of all rain in the column. Natural units are kg/m^2, but I've converted that to a liquid water equivalent depth in mm (like PWAT)
+VertIntPris: VIP --> Mass per unit area of all pristine ice in the column. Natural units are kg/m^2, but I've converted that to a liquid water equivalent depth in mm (like PWAT)
+VertIntSnow: VIS --> Mass per unit area of all snow in the column. Natural units are kg/m^2, but I've converted that to a liquid water equivalent depth in mm (like PWAT)
+VertIntAgg: VIA --> Mass per unit area of all aggregates in the column. Natural units are kg/m^2, but I've converted that to a liquid water equivalent depth in mm (like PWAT)
+VertIntGraupel: VIG --> Mass per unit area of all graupel in the column. Natural units are kg/m^2, but I've converted that to a liquid water equivalent depth in mm (like PWAT)
+VertIntHail: VIH --> Mass per unit area of all hail in the column. Natural units are kg/m^2, but I've converted that to a liquid water equivalent depth in mm (like PWAT)
+VertIntPlate: VIIP --> Mass per unit area of all plate ice in the column. Natural units are kg/m^2, but I've converted that to a liquid water equivalent depth in mm (like PWAT)
+VertIntColumn: VIIC --> Mass per unit area of all column ice in the column. Natural units are kg/m^2, but I've converted that to a liquid water equivalent depth in mm (like PWAT)
+VertIntDendrite: VIID --> Mass per unit area of all dendrites in the column. Natural units are kg/m^2, but I've converted that to a liquid water equivalent depth in mm (like PWAT)
+VertIntLiq: VIL --> Mass per unit area of total liquid condensate in the column. Natural units are kg/m^2, but I've converted that to a liquid water equivalent depth in mm (like PWAT)
+VertIntIce: VII --> Mass per unit area of total ice condensate in the column. Natural units are kg/m^2, but I've converted that to a liquid water equivalent depth in mm (like PWAT)
+CloudDiam: DCP --> Diameter of cloud droplets, in mm
+DrizzleDiam: DDP --> Diameter of drizzle, in mm
+RainDiam: DRP --> Diameter of rain, in mm
+PrisDiam: DPP --> Diameter of pristine ice, in mm
+SnowDiam: DSP --> Diameter of snow, in mm
+AggDiam: DAP --> Diameter of aggregates, in mm
+GraupelDiam: DGP --> Diameter of graupel, in mm
+HailDiam: DHP --> Diameter of hail, in mm
+RhoPrime: RHOP --> Perturbation density (current grid cell density subtracted from horizontal mean density calculated based on convolution kernel and window size), in kg/m^3
+RhoBuoy: BUOY_RHO --> Total buoyancy (buoyancy vertical acceleration) calculated from perturbation density, in m/s^2. Has a larger residual than ThetaRhoBuoy
+ThetaRhoBuoy: BUOY_THETA --> Total buoyancy (buoyancy vertical acceleration) calculated from perturbation density potential temperature, in m/s^2. Has a smaller residual than RhoBuoy
+ThermalBuoy: BUOY_TEMP --> Vertical acceleration from thermal buoyancy, in m/s^2.
+VapBuoy: BUOY_VAP --> Vertical acceleration from vapor buouancy, in m/s^2.
+CondBuoy: BUOY_COND --> Vertical acceleration from condensate loading, in m/s^2.
+PPrimeBuoy: BUOY_PPRIME --> Vertical acceleration from horizontal pressure gradients, in m/s^2.
+VPPGF: VPPGF --> Vertical acceleration from vertical pressure gradients (Vertical Perturbation Pressure Gradient Force), in m/s^2.
 '''
-
-def pvbuck(temp):
-    tempc = temp-273.15; icetempc = np.where(tempc<0, tempc, np.nan)
-    pveq_liq = 6.1121*np.exp((18.678-tempc/234.5)*(tempc/(257.14+tempc)))
-    pveq_ice = 6.1115*np.exp((23.036-icetempc/333.7)*(icetempc/(279.82+icetempc)))
-    return{"EqVaporPressLiq": pveq_liq, "EqVaporPressIce": pveq_ice}
-
-def rams_pveq_ice(icetempc):
-    c0= .6114327e+03; c1= .5027041e+02; c2= .1875982e+01
-    c3= .4158303e-01; c4= .5992408e-03; c5= .5743775e-05
-    c6= .3566847e-07; c7= .1306802e-09; c8= .2152144e-12
-
-    x = np.where(icetempc>-80, icetempc, -80)
-    x = np.where(-1*(np.isnan(icetempc))+1, x, np.nan)
-    # x = np.where(tempc<0, tempc, 0)
-    esif = c0+x*(c1+x*(c2+x*(c3+x*(c4+x*(c5+x*(c6+x*(c7+x*c8)))))))
-    esif = np.where(x<0, esif, np.nan)
-    return esif/100 #Convert from Pa to hPa
-# In[10]:
-def hydrovarsfunc(hydrodf, refdens, hydromass, hydronum):
-    #Can I speed this up with multiprocessing? Each hydrometeor is independent, so this is embarassingly parallel
-    hydroname = hydromass.name
-    if hydroname == "Pris" or hydroname == "Snow":
-        dfkey = f"{hydroname.lower()} col" #Get cfmas and pwmas properties from the hydrometeor table
-    else:
-        dfkey = hydroname.lower()
-    numconc = hydronum*refdens #Convert number/kg to number/m^3
-    mixvol = 1000*hydromass*refdens #Convert kg/kg to g/m^3
-    vertint = (hydromass*refdens).integrate(coord = "z") #mm water equivalent of the given hydrometeor species
-    diam = 10**6*(hydromass/(hydronum*hydrodf.loc[dfkey, "cfmas"]))**(1/hydrodf.loc[dfkey, "pwmas"]) #Hydrometeor mean diameter (microns)
-    return {"Num": numconc, "MixVol": mixvol, "VertInt": vertint, "Diam": diam}
-
-def get_rollvar(ywindow, xwindow, var3d, kerntype = "trikernel"):
-    apxwindow = xwindow
-    apywindow = ywindow
-    if not ywindow%2:
-        apywindow = ywindow+1 #For some reason, astropy needs odd-length windows
-    if not xwindow%2:
-        apxwindow = xwindow+1
-    xwin1d = np.linspace(-apxwindow//2, apxwindow//2, apxwindow); ywin1d = np.linspace(-apxwindow//2, apywindow//2, apywindow)
-    xwin2d, ywin2d = np.meshgrid(xwin1d, ywin1d, indexing = "xy")
-    #Below are a few different kernel options for convolution.
-    #Flat kernel weights everything within the window equally - I wouldn't recommend this, since it may cause artificial oscillations in the smoothed field
-    flatkernel = np.ones((apywindow, apxwindow))
-    #Trikernel creates a conical kernel, weighting cells near the center of the window more than cells toward the edge. This is a fairly well-behaved window, without much ringing
-    trikernel = (1-(xwin2d**2+ywin2d**2)**(1/2)/(max((apxwindow-1)/2, (apywindow-1)/2)))
-    trikernel = np.where(trikernel>=0, trikernel, 0)
-    #Domekernel uses a parabolic convolutional kernel, with cells at the center given weight 1 and cells at the edge given weight 0. This has similar properties to trikernel, but a bit less smooth
-    domekernel = (1-(xwin2d/((apxwindow-1)/2))**2-(ywin2d/((apywindow-1)/2))**2)
-    domekernel = np.where(domekernel>=0, domekernel, 0)
-    #Hornkernel uses a spire-like kernel that very heavily weights the cells near the center of the window, with almost no weight in the outher 2/3 of the window. I wouldn't recommend this, as it seems to cause oscillations similar to the boxcar window
-    hornkernel = np.exp(-((xwin2d**2+ywin2d**2)**(1/2)/(max((apxwindow-1)/2, (apywindow-1)/2))))**4
-    #Gausskernel is a gaussian kernel with weight of 1 in the center and lower weights on the edge. Unlike the trikernel and domekernel, this doesn't have a weight of 0 anywhere in the domain. gausskernel behaves similarly to trikernel and domekernel, but is slightly smoother
-    gausskernel = np.exp(-(xwin2d**2+ywin2d**2)/(0.5*max((apxwindow-1)/2, (apywindow-1)/2)**2))
-    kerndict = {"flatkernel": flatkernel, "trikernel": trikernel, "domekernel": domekernel, "hornkernel": hornkernel, "gausskernel": gausskernel}
-    rollvar = np.zeros(var3d.shape)
-    for zlev in range(rollvar.shape[0]):
-        #Change the kernel below if you want to use something besides a trikernel
-        rollvar[zlev,:,:] = apyconvolve(var3d[zlev,:,:], kernel = kerndict[kerntype], boundary = "extend", normalize_kernel = True, nan_treatment = "interpolate", preserve_nan = True)
-    return rollvar
 
 def get_derivedvars(vardict, derivvars, rawfile, gridprops, window, kernname, rnameflag, hydropath, ccoords = None):
     rawzsub = get_zact(gridprops, rawfile["TOPT"])[1:-1,1:-1,1:-1] #This gives sigma-z coords for the entire domain of the raw file (still cutting off model top, bottom, and horizontal boundaries as intended). Used for vertically intregated quantities and cloud tops/bottoms
@@ -274,26 +207,27 @@ def get_derivedvars(vardict, derivvars, rawfile, gridprops, window, kernname, rn
         dewpointd = get_dewpoint(vardict)
         vardict["TD"].data = dewpointd
         print(f"Found variable {[vardict['TD'].varname, vardict['TD'].ramsname][rnameflag]}!")
-    
-    if "ZCT" in vardict.keys():
-        cloudtopheightd = get_cloudtopheight(rawfile, rawzsub)
-        vardict["ZCT"].data = cloudtopheightd
-        print(f"Found variable {[vardict['ZCT'].varname, vardict['ZCT'].ramsname][rnameflag]}!")
-    
-    if "ZCB" in vardict.keys():
-        cloudbaseheightd = get_cloudbaseheight(rawfile, rawzsub)
-        vardict["ZCB"].data = cloudbaseheightd
-        print(f"Found variable {[vardict['ZCB'].varname, vardict['ZCB'].ramsname][rnameflag]}!")
+    with warnings.catch_warnings(): #The reason we're silenceing warnings here is because numpy get's annoyed if a slice is all NaNs. Since we're looking at cloud tops and bottoms, any column without any condensate is going to be all NaNs!
+        warnings.filterwarnings("ignore")
+        if "ZCT" in vardict.keys():
+            cloudtopheightd = get_cloudtopheight(rawfile, rawzsub)
+            vardict["ZCT"].data = cloudtopheightd
+            print(f"Found variable {[vardict['ZCT'].varname, vardict['ZCT'].ramsname][rnameflag]}!")
+        
+        if "ZCB" in vardict.keys():
+            cloudbaseheightd = get_cloudbaseheight(rawfile, rawzsub)
+            vardict["ZCB"].data = cloudbaseheightd
+            print(f"Found variable {[vardict['ZCB'].varname, vardict['ZCB'].ramsname][rnameflag]}!")
 
-    if "PCT" in vardict.keys():
-        cloudtoppresd = get_cloudtoppres(rawfile)
-        vardict["PCT"].data = cloudtoppresd
-        print(f"Found variable {[vardict['PCT'].varname, vardict['PCT'].ramsname][rnameflag]}!")
+        if "PCT" in vardict.keys():
+            cloudtoppresd = get_cloudtoppres(rawfile)
+            vardict["PCT"].data = cloudtoppresd
+            print(f"Found variable {[vardict['PCT'].varname, vardict['PCT'].ramsname][rnameflag]}!")
 
-    if "PCB" in vardict.keys():
-        cloudbasepresd = get_cloudbasepres(rawfile)
-        vardict["PCB"].data = cloudbasepresd
-        print(f"Found variable {[vardict['PCB'].varname, vardict['PCB'].ramsname][rnameflag]}!")
+        if "PCB" in vardict.keys():
+            cloudbasepresd = get_cloudbasepres(rawfile)
+            vardict["PCB"].data = cloudbasepresd
+            print(f"Found variable {[vardict['PCB'].varname, vardict['PCB'].ramsname][rnameflag]}!")
     
     #Vertical velocity advection
     if "WADVH" in vardict.keys() and ccoords is not None:
@@ -557,45 +491,47 @@ def get_derivedvars(vardict, derivvars, rawfile, gridprops, window, kernname, rn
         print(f"Found variable {[vardict['VIT'].varname, vardict['VIT'].ramsname][rnameflag]}!")
 
     #Hydrometeor Diameters
-    if "DCP" in vardict.keys():
-        clouddiamd = get_clouddiam(vardict, hydrodf)
-        vardict["DCP"].data = clouddiamd
-        print(f"Found variable {[vardict['DCP'].varname, vardict['DCP'].ramsname][rnameflag]}!")
+    with warnings.catch_warnings(): #The reason we're silencing warnings here is because the diameter calculation involves division by particle number mixing ratio. Obviously, if there are no particles of that species, this will be a divison by zero and numpy will throw a fit. Since we don't care about the diameter of particles in grid cells without any particles, we can silence the warning.
+        warnings.filterwarnings("ignore")
+        if "DCP" in vardict.keys():
+            clouddiamd = get_clouddiam(vardict, hydrodf)
+            vardict["DCP"].data = clouddiamd
+            print(f"Found variable {[vardict['DCP'].varname, vardict['DCP'].ramsname][rnameflag]}!")
 
-    if "DDP" in vardict.keys():
-        drizdiamd = get_drizzlediam(vardict, hydrodf)
-        vardict["DDP"].data = drizdiamd
-        print(f"Found variable {[vardict['DDP'].varname, vardict['DDP'].ramsname][rnameflag]}!")
+        if "DDP" in vardict.keys():
+            drizdiamd = get_drizzlediam(vardict, hydrodf)
+            vardict["DDP"].data = drizdiamd
+            print(f"Found variable {[vardict['DDP'].varname, vardict['DDP'].ramsname][rnameflag]}!")
 
-    if "DRP" in vardict.keys():
-        raindiamd = get_raindiam(vardict, hydrodf)
-        vardict["DRP"].data = raindiamd
-        print(f"Found variable {[vardict['DRP'].varname, vardict['DRP'].ramsname][rnameflag]}!")
+        if "DRP" in vardict.keys():
+            raindiamd = get_raindiam(vardict, hydrodf)
+            vardict["DRP"].data = raindiamd
+            print(f"Found variable {[vardict['DRP'].varname, vardict['DRP'].ramsname][rnameflag]}!")
 
-    if "DPP" in vardict.keys():
-        prisdiamd = get_prisdiam(vardict, hydrodf)
-        vardict["DPP"].data = prisdiamd
-        print(f"Found variable {[vardict['DPP'].varname, vardict['DPP'].ramsname][rnameflag]}!")
+        if "DPP" in vardict.keys():
+            prisdiamd = get_prisdiam(vardict, hydrodf)
+            vardict["DPP"].data = prisdiamd
+            print(f"Found variable {[vardict['DPP'].varname, vardict['DPP'].ramsname][rnameflag]}!")
 
-    if "DSP" in vardict.keys():
-        snowdiamd = get_snowdiam(vardict, hydrodf)
-        vardict["DSP"].data = snowdiamd
-        print(f"Found variable {[vardict['DSP'].varname, vardict['DSP'].ramsname][rnameflag]}!")
+        if "DSP" in vardict.keys():
+            snowdiamd = get_snowdiam(vardict, hydrodf)
+            vardict["DSP"].data = snowdiamd
+            print(f"Found variable {[vardict['DSP'].varname, vardict['DSP'].ramsname][rnameflag]}!")
 
-    if "DAP" in vardict.keys():
-        aggdiamd = get_aggregatediam(vardict, hydrodf)
-        vardict["DAP"].data = aggdiamd
-        print(f"Found variable {[vardict['DAP'].varname, vardict['DAP'].ramsname][rnameflag]}!")
+        if "DAP" in vardict.keys():
+            aggdiamd = get_aggregatediam(vardict, hydrodf)
+            vardict["DAP"].data = aggdiamd
+            print(f"Found variable {[vardict['DAP'].varname, vardict['DAP'].ramsname][rnameflag]}!")
 
-    if "DGP" in vardict.keys():
-        graupeldiamd = get_graupeldiam(vardict, hydrodf)
-        vardict["DGP"].data = graupeldiamd
-        print(f"Found variable {[vardict['DGP'].varname, vardict['DGP'].ramsname][rnameflag]}!")
+        if "DGP" in vardict.keys():
+            graupeldiamd = get_graupeldiam(vardict, hydrodf)
+            vardict["DGP"].data = graupeldiamd
+            print(f"Found variable {[vardict['DGP'].varname, vardict['DGP'].ramsname][rnameflag]}!")
 
-    if "DHP" in vardict.keys():
-        haildiamd = get_haildiam(vardict, hydrodf)
-        vardict["DHP"].data = haildiamd
-        print(f"Found variable {[vardict['DHP'].varname, vardict['DHP'].ramsname][rnameflag]}!")
+        if "DHP" in vardict.keys():
+            haildiamd = get_haildiam(vardict, hydrodf)
+            vardict["DHP"].data = haildiamd
+            print(f"Found variable {[vardict['DHP'].varname, vardict['DHP'].ramsname][rnameflag]}!")
     
     #Reference State and Momentum Budget Calculations. Currently, can only be done for cartesian interpolation, unfortunately. Be aware that these are *very slow* to calculate compared to all other 3D variables
     if "RHOP" in vardict.keys() and ccoords is not None:
