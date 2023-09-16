@@ -40,7 +40,7 @@ def read_userfile(fpath):
         ngrid = mlist[mlist.index("Grid Number to post-process")+1] #For now, can only do one grid at a time; if you want to analyze a fine and coarse grid, will need to run this twice with different ngrid
         uservars = mlist[mlist.index("List of RAMS variables you'd like to process, as comma-separated entries. Put *all* to process all available variables")+1]
         rnameflag = mlist[mlist.index("Use the *RAMS* variable names, or *verbose* variable names in post-processed NetCDF files?")+1]
-        derivvars = mlist[mlist.index("List of derived variables you'd like to output, as comma-separated entries (a full list of available derived variables is avilable in comments at the top of derivedvars.py). Leave blank to not output any derived quantities. Enter *all* to output all derived quantities available for your output file")+1]
+        derivvars = mlist[mlist.index("List of derived variables you'd like to output, as comma-separated entries (a full list of available derived variables is avilable in comments at the top of derivedvars.py). Leave blank to not output any derived quantities. Enter *all* to output all derived quantities available for your output file. Enter *nomomentum* to output all variables except momentum budgets, which are quite slow to calculate")+1]
         ywininput = mlist[mlist.index("If outputting momentum budgets, the number of Y grid points used for horizontal averaging")+1]
         xwininput = mlist[mlist.index("If outputting momentum budgets, the number of X grid points used for horizontal averaging")+1]
         kernname = mlist[mlist.index("If outputting momentum budgets, the type of convolution kernel used for horizontal averaging (documentation is available in derivedvars.py)")+1]
@@ -521,7 +521,7 @@ if isuserfile.strip().upper() == "YES":
     folderpath = userdict["folderpath"]; postpath = userdict["postpath"]; ramsinpath = userdict["ramsinpath"]
     interptype = userdict["interptype"]; atop = userdict["atop"]; userpreslvs = userdict["userpreslvs"]
     instime = userdict["instime"]; inetime = userdict["inetime"]; ngrid = int(userdict["ngrid"]); uservars = userdict["uservars"]
-    rnameflag = userdict["rnameflag"]; derivvars = userdict["derivvars"]; ywininput = userdict["ywininput"]; xwininput = userdict["xwininput"]
+    rnameflag = userdict["rnameflag"]; derivvarin = userdict["derivvars"]; ywininput = userdict["ywininput"]; xwininput = userdict["xwininput"]
     kernname = userdict["kernname"]; filetype = userdict["filetype"]
 
 elif isuserfile.strip().upper() == "NO":
@@ -534,7 +534,7 @@ elif isuserfile.strip().upper() == "NO":
     ngrid = int(input("Enter the Grid Number to post-process: ")) #For now, can only do one grid at a time; if you want to analyze a fine and coarse grid, will need to run this twice with different ngrid
     uservars = input("Enter the list of RAMS variables you'd like to process, as comma-separated entries, or put *all* to process all available variables: ")
     rnameflag = input("Use the *RAMS* variable names, or *verbose* variable names in post-processed NetCDF files? ")
-    derivvars = input("Enter the list of derived variables you'd like to output, as comma-separated entries (a full list of available derived variables is avilable in comments at the top of derivedvars.py). Leave blank to not output any derived quantities. Enter *all* to output all derived quantities available for your output file: ")
+    derivvarin = input("Enter the list of derived variables you'd like to output, as comma-separated entries (a full list of available derived variables is avilable in comments at the top of derivedvars.py). Leave blank to not output any derived quantities. Enter *all* to output all derived quantities available for your output file. Enter *nomomentum* to output all variables except momentum budgets, which are quite slow to calculate: ")
 if not os.path.exists(folderpath):
     raise Exception("Output file directory not found!")
 
@@ -581,21 +581,22 @@ if rnameflag.strip().upper() == "RAMS":
     rnameflag = 1
 elif rnameflag.strip().upper() == "VERBOSE":
     rnameflag = 0
-if derivvars == "":
+if derivvarin == "":
     derivvars = None
-elif derivvars.strip("* ").lower() == "all":
+elif derivvarin.strip("* ").lower() == "all":
     dvfile = open("dvardictfile", "rb")
     dvarnamedict = pickle.load(dvfile)
     dvfile.close()
     derivvars = list(dvarnamedict.values())
+elif derivvarin.strip("* ").lower() == "nomomentum":
+    dvfile = open("dvardictfile", "rb")
+    dvarnamedict = pickle.load(dvfile)
+    dvfile.close()
+    derivvars = list(dvarnamedict.values())
+    for momvar in ["RHOP", "BUOY_RHO", "BUOY_THETA", "BUOY_TEMP", "BUOY_VAP", "BUOY_COND", "BUOY_PPRIME", "VPPGF"]:
+        derivvars.remove(momvar)
 
-    if isuserfile.strip().upper() == "NO":
-        ywininput = input("How many Y grid points do you want to use for horizontal averaging (for momentum budgets)? ")
-        xwininput = input("How many X grid points do you want to use for horizontal averaging (for momentum budgets)? ")
-    ywindow = int(ywininput.strip())
-    xwindow = int(xwininput.strip())
-    window = {"ywindow": ywindow, "xwindow": xwindow} #Number of gridpoints to average over in zonal and meridional directions, respectively, when making reference states for momentum budget calculations. 
-elif derivvars is not None:
+elif derivvarin is not None:
     dvfile = open("dvardictfile", "rb")
     dvarnamedict = pickle.load(dvfile)
     dvfile.close()
@@ -604,14 +605,16 @@ elif derivvars is not None:
     elif rnameflag == 1:
         derivvars = [st.strip().upper() for st in derivvars.split(",")]
 
-    if isuserfile.strip().upper() == "NO":
-        ywininput = input("How many Y grid points do you want to use for horizontal averaging (for momentum budgets)? ")
-        xwininput = input("How many X grid points do you want to use for horizontal averaging (for momentum budgets)? ")
+if isuserfile.strip().upper() == "NO" and any(momvar in derivvars for momvar in ["RHOP", "BUOY_RHO", "BUOY_THETA", "BUOY_TEMP", "BUOY_VAP", "BUOY_COND", "BUOY_PPRIME", "VPPGF"]):
+    ywininput = input("How many Y grid points do you want to use for horizontal averaging (for momentum budgets)? ")
+    xwininput = input("How many X grid points do you want to use for horizontal averaging (for momentum budgets)? ")
+if any(momvar in derivvars for momvar in ["RHOP", "BUOY_RHO", "BUOY_THETA", "BUOY_TEMP", "BUOY_VAP", "BUOY_COND", "BUOY_PPRIME", "VPPGF"]):
     ywindow = int(ywininput.strip())
     xwindow = int(xwininput.strip())
     window = {"ywindow": ywindow, "xwindow": xwindow} #Number of gridpoints to average over in zonal and meridional directions, respectively, when making reference states for momentum budget calculations. 
 else:
     window = None
+
 if isuserfile.strip().upper() == "NO":
     kernname = "trikernel" #Change this to "domekernel", "gausskernel", "flatkernel", or "hornkernel" depending on which one you want. Kernel details are described derivedvars.get_rollvars
 hydropath = "hydroparams.csv"
