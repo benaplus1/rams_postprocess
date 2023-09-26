@@ -18,7 +18,7 @@ Currently, there's very little documentation. I will work on that going forward.
 
 That's it! Then, the program should run automatically until it has finished post-processing the files for all the times you requested.
 
-Because of the parallelization, I would highly recommend running this code on a server with several cores and a decent amount of memory (for the van den Heever group, that's Snowfall1/2/3 or Solvarg). In the namelist, choose a number of cores you feel is appropriate (I've found that the number of workers you should use to avoid using all up memory is *roughly* (0.6*Total Server Memory in bytes)/(nx*ny*nz*nv*8.5), where nx, ny, nz are the number of x,y, and z points in the post-processed coordinates, nv is the number of 3D variables (which dominate memory use). 
+Because of the parallelization, I would highly recommend running this code on a server with several cores and a decent amount of memory (for the van den Heever group, that's Snowfall1/2/3 or Solvarg). In the namelist, choose a number of cores you feel is appropriate (I've found that the number of workers you should use to avoid using all up memory is *roughly* (0.6 * Total Server Memory in bytes)/(nx * ny * nz * nv * 8.5), where nx, ny, nz are the number of x,y, and z points in the post-processed coordinates, nv is the number of 3D variables (which dominate memory use). 
 
 Procedure for adding a new RAMS output variable (*not* a derived variable):
 1. Add the new variable in the "get_fullvarlist" function in varinit.py. A guide to the different attributes of the "outvar" class are detailed at the top of varinit.py.
