@@ -29,7 +29,7 @@ def derivvarinit():
    
     dvardict["TR"] = outvar(varname = "TempRho", longname = "Density Temperature", stdname = None, offline = True, vartype = "3d", ramsname = "TR", invar = ["THETA", "PI", "RV", "RTP"], unitfactor = 1, decnum = 3, units = "K")
     
-    dvardict["RHO"] = outvar(varname = "Rho", longname = "Air Density", stdname = "air_density", offline = True, vartype = "3d", ramsname = "RHO", invar = ["THETA", "PI", "RV"], unitfactor = 1, decnum = 4, units = "kg m**-3")
+    dvardict["RHO"] = outvar(varname = "Rho", longname = "Air Density", stdname = "air_density", offline = True, vartype = "3d", ramsname = "Rho", invar = ["THETA", "PI", "RV"], unitfactor = 1, decnum = 4, units = "kg m**-3")
     
     dvardict["E"] = outvar(varname = "VaporPressure", longname = "Vapor Pressure", stdname = "water_vapor_partial_pressure_in_air", offline = True, vartype = "3d", ramsname = "E", invar = ["PI", "RV"], unitfactor = 1, decnum = 5, units = "hPa")
     
@@ -183,31 +183,30 @@ def derivvarinit():
     return dvardict
 
 #This dictionary links the "verbose names" and the "rams names" for each derived variable. We need this because in the backend, I use the rams names for all derived variables. 
+if __name__ == "__main__":
+    dvarnamedict = {"SrfTemp": "TS", "SrfPres": "PS", "MSLP": "MSLP", "MSLT": "MSLT", "CondMix": "RTC",
+    "IceMix": "RTI", "LiqMix": "RTL", "ThetaV": "THV", "ThetaRho": "THR", "Pressure": "P",
+    "Temperature": "T", "TempV": "TV", "TempRho": "TR", "Rho": "RHO", "VaporPressure": "E",
+    "PWAT": "PWAT", "Dewpoint": "TD", "CloudTopHeight": "ZCT", "CloudBaseHeight": "ZCB",
+    "CloudTopPressure": "PCT", "CloudBasePressure": "PCB", "WAdv_H": "WADVH",
+    "WAdv_V": "WADVV", "XVort": "VOX", "YVort": "VOY", "ZVortRel": "VOZR",
+    "ZVortAbs": "VOZA", "LiqSatFrac": "SL", "IceSatFrac": "SI", "LiqVaporDeficit": "DVL",
+    "IceVaporDeficit": "DVI", "SuperLiqMix": "RVSI", "SuperIceMix": "RVSI", "CloudNum": "NCP",
+    "DrizNum": "NDP", "RainNum": "NRP", "PrisNum": "NPP", "SnowNum": "NSP", "AggNum": "NAP",
+    "GraupelNum": "NGP", "HailNum": "NHP", "PlateNum": "NIPP", "ColumnNum": "NICP",
+    "DendriteNum": "NIDP", "CloudWaterContent": "CWC", "DrizzleWaterContent": "DWC",
+    "RainWaterContent": "RWC", "PrisWaterContent": "PWC", "SnowWaterContent": "SWC",
+    "AggWaterContent": "AWC", "GraupelWaterContent": "GWC", "HailWaterContent": "HWC",
+    "PlateWaterContent": "IPWC", "ColumnWaterContent": "ICWC", "DendriteWaterContent": "IDWC",
+    "VertIntCloud": "VIC", "VertIntDrizzle": "VID", "VertIntRain": "VIR",
+    "VertIntPris": "VIP", "VertIntSnow": "VIS", "VertIntAgg": "VIA", "VertIntGraupel": "VIG",
+    "VertIntHail": "VIH", "VertIntPlate": "VIIP", "VertIntColumn": "VIIC",
+    "VertIntDendrite": "VIID", "VertIntLiq": "VIL", "VertIntIce": "VII",
+    "CloudDiam": "DCP", "DrizzleDiam": "DDP", "RainDiam": "DRP", "PrisDiam": "DPP",
+    "SnowDiam": "DSP", "AggDiam": "DAP", "GraupelDiam": "DGP", "HailDiam": "DHP",
+    "RhoPrime": "RHOP", "RhoBuoy": "BUOY_RHO", "ThetaRhoBuoy": "BUOY_THETA",
+    "ThermalBuoy": "BUOY_TEMP", "VapBuoy": "BUOY_VAP", "CondBuoy": "BUOY_COND", "PPrimeBuoy": "BUOY_PPRIME", "VPPGF": "VPPGF"}
 
-dvarnamedict = {"SrfTemp": "TS", "SrfPres": "PS", "MSLP": "MSLP", "MSLT": "MSLT", "CondMix": "RTC",
- "IceMix": "RTI", "LiqMix": "RTL", "ThetaV": "THV", "ThetaRho": "THR", "Pressure": "P",
- "Temperature": "T", "TempV": "TV", "TempRho": "TR", "RHO": "RHO", "VaporPressure": "E",
- "PWAT": "PWAT", "Dewpoint": "TD", "CloudTopHeight": "ZCT", "CloudBaseHeight": "ZCB",
- "CloudTopPressure": "PCT", "CloudBasePressure": "PCB", "WAdv_H": "WADVH",
- "WAdv_V": "WADVV", "XVort": "VOX", "YVort": "VOY", "ZVortRel": "VOZR",
- "ZVortAbs": "VOZA", "LiqSatFrac": "SL", "IceSatFrac": "SI", "LiqVaporDeficit": "DVL",
- "IceVaporDeficit": "DVI", "SuperLiqMix": "RVSI", "SuperIceMix": "RVSI", "CloudNum": "NCP",
- "DrizNum": "NDP", "RainNum": "NRP", "PrisNum": "NPP", "SnowNum": "NSP", "AggNum": "NAP",
- "GraupelNum": "NGP", "HailNum": "NHP", "PlateNum": "NIPP", "ColumnNum": "NICP",
- "DendriteNum": "NIDP", "CloudWaterContent": "CWC", "DrizzleWaterContent": "DWC",
- "RainWaterContent": "RWC", "PrisWaterContent": "PWC", "SnowWaterContent": "SWC",
- "AggWaterContent": "AWC", "GraupelWaterContent": "GWC", "HailWaterContent": "HWC",
- "PlateWaterContent": "IPWC", "ColumnWaterContent": "ICWC", "DendriteWaterContent": "IDWC",
- "VertIntCloud": "VIC", "VertIntDrizzle": "VID", "VertIntRain": "VIR",
- "VertIntPris": "VIP", "VertIntSnow": "VIS", "VertIntAgg": "VIA", "VertIntGraupel": "VIG",
- "VertIntHail": "VIH", "VertIntPlate": "VIIP", "VertIntColumn": "VIIC",
- "VertIntDendrite": "VIID", "VertIntLiq": "VIL", "VertIntIce": "VII",
- "CloudDiam": "DCP", "DrizzleDiam": "DDP", "RainDiam": "DRP", "PrisDiam": "DPP",
- "SnowDiam": "DSP", "AggDiam": "DAP", "GraupelDiam": "DGP", "HailDiam": "DHP",
- "RhoPrime": "RHOP", "RhoBuoy": "BUOY_RHO", "ThetaRhoBuoy": "BUOY_THETA",
- "ThermalBuoy": "BUOY_TEMP", "VapBuoy": "BUOY_VAP", "CondBuoy": "BUOY_COND", "PPrimeBuoy": "BUOY_PPRIME", "VPPGF": "VPPGF"}
-with open("/sumatra/ascheb/escape/python/postprocess/dvardictfile", "wb") as wfile:
-    pickle.dump(dvarnamedict, wfile)
-
-with open("/sumatra/ascheb/escape/python/postprocess/dvardictfile", "rb") as rfile:
-    dvnamedict = pickle.load(rfile)
+    with open("dvardictfile", "wb") as wfile:
+        pickle.dump(dvarnamedict, wfile)
+    print("Done!")

@@ -433,8 +433,8 @@ def postprocess(prepath, postpath, filetype, gridprops, interptype, atop, userpr
     if uservars == "all":
         uservars = datavarlist
 
-    varlist = fillvarlist(uservars, datavarlist)
-    vardict = gen_vardict(varlist); del varlist #A dictionary is necessary here because I'll need to access certain variables for derivedvars
+    fullvarlist = fillvarlist()
+    vardict = gen_vardict(uservars, datavarlist, fullvarlist); del fullvarlist #A dictionary is necessary here because I'll need to access certain variables for derivedvars
     varkeys2d = [vkey for vkey in vardict.keys() if vardict[vkey].vartype == "2d"]
     varkeyspatch = [vkey for vkey in vardict.keys() if vardict[vkey].vartype == "2dPatch"]
     varkeyssoil = [vkey for vkey in vardict.keys() if vardict[vkey].vartype == "2dSoil"]
@@ -572,6 +572,7 @@ postpath = f"{postpath}/"
 ftype = filetype.strip("* ").upper()
 gridprops = get_gprops(headpath, ngrid)
 numworkers = round(2*10**8/(gridprops["nx"]*gridprops["ny"]*gridprops["nz"]))
+numworkers = 12 #This should be okay for a small subset of variables
 timedict = get_timedict(ramsinpath, ngrid)
 if uservarin.strip("* ") != "all":
     uservars = [st.strip().upper() for st in uservarin.split(",")]
@@ -620,14 +621,14 @@ if isuserfile.strip().upper() == "NO":
 hydropath = "hydroparams.csv"
 tlist = date_range(instime, inetime, freq = timedelta(seconds = timedict["afiletime"])).to_pydatetime()
 postpartial = partial(postprocess, prepath, postpath, ftype, gridprops, interptype, atop, userpreslvs, kernname, timedict, window, hydropath, uservars, derivvars, rnameflag)
-# with ProcessPoolExecutor(max_workers = numworkers) as ppool:
-#     flist = print(list(ppool.map(postpartial, tlist)))
+with ProcessPoolExecutor(max_workers = numworkers) as ppool:
+    flist = print(list(ppool.map(postpartial, tlist)))
 print("Running Post-Processing Routine")
-for time in tlist:
-    pst = perf_counter()
-    ft = postpartial(time)
-    pet = perf_counter()
-    print(f"Post-Processing data at time {time.strftime('%Y-%m-%d-%H%M%S')} took {pet-pst:.2f} seconds")
+# for time in tlist:
+#     pst = perf_counter()
+#     ft = postpartial(time)
+#     pet = perf_counter()
+#     print(f"Post-Processing data at time {time.strftime('%Y-%m-%d-%H%M%S')} took {pet-pst:.2f} seconds")
 
 endtime = perf_counter()
 print(f"All Post-Processing took {endtime-starttime:.2f} seconds")

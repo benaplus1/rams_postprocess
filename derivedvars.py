@@ -12,11 +12,11 @@ import warnings
 
 '''
 List of available derived variables. 
-Format VerboseName: RAMSNAME --> Description of the variablee
+Format VerboseName: RAMSNAME --> Description of the variable
 SrfTemp: TS --> Terrain-following temperature at the surface, in K
 SrfPres: PS --> Terrain-following pressure at the surface, in hPA
-MSLP: MSLP --> Approximate sea-level pressure at each x-y gridpoint. Found by a hydrostatic approximation using a 6.5K/km lapse rate
-MSLT: MSLT --> Approximate sea-level temperature at each x-y gridpoint. Found by interpolating surface pressure down from terrain height to sea level using a 6.5K/km lapse rate
+MSLP: MSLP --> Approximate sea-level pressure at each x-y gridpoint, in hPa. Found by a hydrostatic approximation using a 6.5K/km lapse rate
+MSLT: MSLT --> Approximate sea-level temperature at each x-y gridpoint, in K. Found by interpolating surface pressure down from terrain height to sea level using a 6.5K/km lapse rate
 CondMix: RTC --> Total condensate mixing ratio, in g/kg
 IceMix: RTI --> Total ice condensate mixing ratio, in g/kg
 LiqMix: RTL --> Total liquid condensate mixing ratio, in g/kg
@@ -96,7 +96,7 @@ ThermalBuoy: BUOY_TEMP --> Vertical acceleration from thermal buoyancy, in m/s^2
 VapBuoy: BUOY_VAP --> Vertical acceleration from vapor buouancy, in m/s^2.
 CondBuoy: BUOY_COND --> Vertical acceleration from condensate loading, in m/s^2.
 PPrimeBuoy: BUOY_PPRIME --> Vertical acceleration from horizontal pressure gradients, in m/s^2.
-VPPGF: VPPGF --> Vertical acceleration from vertical pressure gradients (Vertical Perturbation Pressure Gradient Force), in m/s^2.
+VPPGF: VPPGF --> Vertical acceleration from vertical perturbation pressure gradients (Vertical Perturbation Pressure Gradient Force), in m/s^2.
 '''
 
 def get_derivedvars(vardict, derivvars, rawfile, gridprops, window, kernname, rnameflag, hydropath, ccoords = None):
