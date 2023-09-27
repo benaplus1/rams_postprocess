@@ -27,6 +27,9 @@ Analysis start time in YYYY-mm-dd-HHMMSS format
 Analysis end time in YYYY-mm-dd-HHMMSS format
 2010-01-02-080000
 
+Number of cores to use for post-processing
+12
+
 Grid Number to post-process
 1
 

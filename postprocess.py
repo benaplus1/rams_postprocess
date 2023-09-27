@@ -33,6 +33,7 @@ def read_userfile(fpath):
         userpreslvs = mlist[mlist.index("If using pressure interpolation, the pressure levels in hPa you'd like the post-processed data on as comma-separated values")+1]
         instime = mlist[mlist.index("Analysis start time in YYYY-mm-dd-HHMMSS format")+1]
         inetime = mlist[mlist.index("Analysis end time in YYYY-mm-dd-HHMMSS format")+1]
+        numworkers = mlist[mlist.index("Number of cores to use for post-processing")+1]
         ngrid = mlist[mlist.index("Grid Number to post-process")+1] #For now, can only do one grid at a time; if you want to analyze a fine and coarse grid, will need to run this twice with different ngrid
         uservars = mlist[mlist.index("List of RAMS variables you'd like to process, as comma-separated entries. Put *all* to process all available variables")+1]
         rnameflag = mlist[mlist.index("Use the *RAMS* variable names, or *verbose* variable names in post-processed NetCDF files?")+1]
@@ -40,7 +41,7 @@ def read_userfile(fpath):
         ywininput = mlist[mlist.index("If outputting momentum budgets, the number of Y grid points used for horizontal averaging")+1]
         xwininput = mlist[mlist.index("If outputting momentum budgets, the number of X grid points used for horizontal averaging")+1]
         kernname = mlist[mlist.index("If outputting momentum budgets, the type of convolution kernel used for horizontal averaging (documentation is available in derivedvars.py)")+1]
-        userdict = {"folderpath": folderpath, "postpath": postpath, "filetype": filetype, "ramsinpath": ramsinpath, "interptype": interptype, "atop": atop, "userpreslvs": userpreslvs, "instime": instime, "inetime": inetime, "ngrid": ngrid, "uservars": uservars, "rnameflag": rnameflag, "derivvars": derivvars, "ywininput": ywininput, "xwininput": xwininput, "kernname": kernname}
+        userdict = {"folderpath": folderpath, "postpath": postpath, "filetype": filetype, "ramsinpath": ramsinpath, "interptype": interptype, "atop": atop, "userpreslvs": userpreslvs, "instime": instime, "inetime": inetime, "numworkers": numworkers, "ngrid": ngrid, "uservars": uservars, "rnameflag": rnameflag, "derivvars": derivvars, "ywininput": ywininput, "xwininput": xwininput, "kernname": kernname}
     return userdict
 
 def get_timedict(ramsinpath, ngrid):
@@ -516,11 +517,23 @@ if isuserfile.strip().upper() == "YES":
     userfpath = input("Enter the path of the post-processing settings file: ")
     userfpath = userfpath.strip()
     userdict = read_userfile(userfpath)
-    folderpath = userdict["folderpath"]; postpath = userdict["postpath"]; ramsinpath = userdict["ramsinpath"]
-    interptype = userdict["interptype"]; atop = userdict["atop"]; userpreslvs = userdict["userpreslvs"]
-    instime = userdict["instime"]; inetime = userdict["inetime"]; ngrid = int(userdict["ngrid"]); uservarin = userdict["uservars"]
-    rnameflag = userdict["rnameflag"]; derivvarin = userdict["derivvars"]; ywininput = userdict["ywininput"]; xwininput = userdict["xwininput"]
-    kernname = userdict["kernname"]; filetype = userdict["filetype"]
+    folderpath = userdict["folderpath"]
+    postpath = userdict["postpath"]
+    ramsinpath = userdict["ramsinpath"]
+    interptype = userdict["interptype"]
+    atop = userdict["atop"]
+    userpreslvs = userdict["userpreslvs"]
+    instime = userdict["instime"]
+    inetime = userdict["inetime"]
+    numworkers = int(userdict["numworkers"])
+    ngrid = int(userdict["ngrid"])
+    uservarin = userdict["uservars"]
+    rnameflag = userdict["rnameflag"]
+    derivvarin = userdict["derivvars"]
+    ywininput = userdict["ywininput"]
+    xwininput = userdict["xwininput"]
+    kernname = userdict["kernname"]
+    filetype = userdict["filetype"]
 
 elif isuserfile.strip().upper() == "NO":
     folderpath = input("Enter the folder name containing simulation output you'd like to analyze: ")
@@ -529,6 +542,7 @@ elif isuserfile.strip().upper() == "NO":
     interptype = input("Enter the type of vertical coordinates to use: Cartesian coordinates, Pressure coordinates, or Sigma coordinates ")
     instime = input("Enter the analysis start time in YYYY-mm-dd-HHMMSS format: ")
     inetime = input("Enter the analysis end time in YYYY-mm-dd-HHMMSS format: ")
+    numworkers = int(input("Number of cores to use for post-processing"))
     ngrid = int(input("Enter the Grid Number to post-process: ")) #For now, can only do one grid at a time; if you want to analyze a fine and coarse grid, will need to run this twice with different ngrid
     uservarin = input("Enter the list of RAMS variables you'd like to process, as comma-separated entries, or put *all* to process all available variables: ")
     rnameflag = input("Use the *RAMS* variable names, or *verbose* variable names in post-processed NetCDF files? ")
@@ -571,8 +585,6 @@ prepath = f"{folderpath}/"
 postpath = f"{postpath}/"
 ftype = filetype.strip("* ").upper()
 gridprops = get_gprops(headpath, ngrid)
-numworkers = round(2*10**8/(gridprops["nx"]*gridprops["ny"]*gridprops["nz"]))
-numworkers = 12 #This should be okay for a small subset of variables
 timedict = get_timedict(ramsinpath, ngrid)
 if uservarin.strip("* ") != "all":
     uservars = [st.strip().upper() for st in uservarin.split(",")]
