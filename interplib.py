@@ -96,7 +96,7 @@ def gen_coords_sigma(gridprops, top2d, atop):
     sclycoords = np.arange(-(np.ceil(ny/2)-1.5)*dx, (np.floor(ny/2)-0.5)*dx, dx)
     mergedscl = xr.Dataset(coords = {"model_level": zdict["zlevels"], "y": sclycoords, "x": sclxcoords})
     mergedscl["model_level"].attrs = {"longname": "Model Sigma Level", "units": 1}; mergedscl["y"].attrs = {"longname": "Northward Distance from Model Center", "units": "m"}; mergedscl["x"].attrs = {"longname": "Eastward Distance from Model Center", "units": "m"}
-    mergedscl = mergedscl.assign_coords({"lat1d": ("y", glat[1:-1,int(nx/2)]), "lon1d": ("x", glon[int(ny/2),1:-1]), "lat2d": (["y", "x"], glat[1:-1, 1:-1]), "lon2d": (["y", "x"], glat[1:-1, 1:-1]), "z": (["model_level", "y", "x"], zdict["zactual"][:,1:-1,1:-1]),
+    mergedscl = mergedscl.assign_coords({"lat1d": ("y", glat[1:-1,int(nx/2)]), "lon1d": ("x", glon[int(ny/2),1:-1]), "lat2d": (["y", "x"], glat[1:-1, 1:-1]), "lon2d": (["y", "x"], glon[1:-1, 1:-1]), "z": (["model_level", "y", "x"], zdict["zactual"][:,1:-1,1:-1]),
     "soillev": gridprops["soillevs"], "patch": np.arange(0, gridprops["npatch"]), "snowlev": np.arange(0, gridprops["nsnow"])})
 
     mergedscl["z"].attrs = {"longname": "Altitude Above Mean Sea Level on Sigma-Z Grid", "units": "m"}
@@ -117,7 +117,7 @@ def gen_coords_pressure(gridprops, top2d, presvals, userpreslvs):
     sclycoords = np.arange(-(np.ceil(ny/2)-1.5)*dx, (np.floor(ny/2)-0.5)*dx, dx)
     mergedscl = xr.Dataset(coords = {"pressure_level": userpreslvs, "y": sclycoords, "x": sclxcoords})
     mergedscl["pressure_level"].attrs = {"longname": "Pressure Level", "units": "hPa"}; mergedscl["y"].attrs = {"longname": "Northward Distance from Model Center", "units": "m"}; mergedscl["x"].attrs = {"longname": "Eastward Distance from Model Center", "units": "m"}
-    mergedscl = mergedscl.assign_coords({"lat1d": ("y", glat[1:-1,int(nx/2)]), "lon1d": ("x", glon[int(ny/2),1:-1]), "lat2d": (["y", "x"], glat[1:-1, 1:-1]), "lon2d": (["y", "x"], glat[1:-1, 1:-1]), "z": (["pressure_level", "y", "x"], zstarpreslev),
+    mergedscl = mergedscl.assign_coords({"lat1d": ("y", glat[1:-1,int(nx/2)]), "lon1d": ("x", glon[int(ny/2),1:-1]), "lat2d": (["y", "x"], glat[1:-1, 1:-1]), "lon2d": (["y", "x"], glon[1:-1, 1:-1]), "z": (["pressure_level", "y", "x"], zstarpreslev),
     "soillev": gridprops["soillevs"], "patch": np.arange(0, gridprops["npatch"]), "snowlev": np.arange(0, gridprops["nsnow"])})
 
     mergedscl["soillev"].attrs = {"longname": "Depth of Soil Below Surface", "units": "m"}; mergedscl["patch"].attrs = {"longname": "Patch Number (0 = water, 1+ = land)", "units": 1}; mergedscl["snowlev"].attrs = {"longname": "Snow Level Number", "units": 1}
@@ -132,7 +132,7 @@ def gen_coords_cart(gridprops, top2d, atop):
     sclycoords = np.arange(-(np.ceil(ny/2)-1.5)*dx, (np.floor(ny/2)-0.5)*dx, dx)
     mergedscl = xr.Dataset(coords = {"z": newzlvs[1:], "y": sclycoords, "x": sclxcoords})
     mergedscl["z"].attrs = {"longname": "Altutude Above Mean Sea Level", "unitss": "m"}; mergedscl["y"].attrs = {"longname": "Northward Distance from Model Center", "units": "m"}; mergedscl["x"].attrs = {"longname": "Eastward Distance from Model Center", "units": "m"}
-    mergedscl = mergedscl.assign_coords({"lat1d": ("y", glat[1:-1,int(nx/2)]), "lon1d": ("x", glon[int(ny/2),1:-1]), "lat2d": (["y", "x"], glat[1:-1, 1:-1]), "lon2d": (["y", "x"], glat[1:-1, 1:-1]),
+    mergedscl = mergedscl.assign_coords({"lat1d": ("y", glat[1:-1,int(nx/2)]), "lon1d": ("x", glon[int(ny/2),1:-1]), "lat2d": (["y", "x"], glat[1:-1, 1:-1]), "lon2d": (["y", "x"], glon[1:-1, 1:-1]),
     "soillev": gridprops["soillevs"], "patch": np.arange(0, gridprops["npatch"]), "snowlev": np.arange(0, gridprops["nsnow"])})
     mergedscl["lat1d"].attrs = {"longname": "1D Latitude (Based on Middle Longitude of the Model Grid)", "units": "degree_north"}; mergedscl["lon1d"].attrs = {"longname": "1D Longitude (Based on Middle Latitudes of the Model Grid)", "units": "degree_east"}; mergedscl["lat2d"].attrs = {"longname": "2D Latitude Field from Full Model Grid", "units": "degree"}; mergedscl["lon2d"].attrs = {"longname": "2D Longitude Field from the Full Model Grid", "units": "degree"}
     mergedscl["soillev"].attrs = {"longname": "Depth of Soil Below Surface", "units": "m"}; mergedscl["patch"].attrs = {"longname": "Patch Number (0 = water, 1+ = land)", "units": 1}; mergedscl["snowlev"].attrs = {"longname": "Snow Level Number", "units": 1}
