@@ -36,6 +36,7 @@ CloudTopPressure: PCT --> Pressure at highest point in each x-y column with clou
 CloudBasePressure: PCB --> Pressure at lowest point in each x-y column with cloud water or pristine ice, in hPa
 WAdv_H: WADVH --> Horizontal advection of vertical velocity, in m/s^2
 WAdv_V: WADVV --> Vertical advection of vertical velocity, in m/s^2
+HorizDiv: DIV --> Magnitude and sign of horizontal divergence, in s^-1
 XVort: VOX --> Magnitude and sign of vorticity in the +X (eastward) direction, in s^-1
 YVort: VOY --> Magnitude and sign of vorticity in the +Y (northward) direction, in s^-1
 ZVortRel: VOZR --> Magnitude and sign of relative vorticity in the +Z (upward) direction, in s^-1
@@ -246,6 +247,13 @@ def get_derivedvars(vardict, derivvars, rawfile, gridprops, window, kernname, rn
     elif "WADVV" in vardict.keys() and ccoords is None:
         print("Unfortunately, vertical advection of w is only available for cartesian interpolation at the moment")
 
+    #Horizontal Divergence
+    if "DIV" in vardict.keys() and ccoords is not None:
+        divd = get_horizdiv(vardict, gridprops)
+        vardict["DIV"].data = divd
+        print(f"Found variable {[vardict['DIV'].varname, vardict['DIV'].ramsname][rnameflag]}!")
+    elif "DIV" in vardict.keys() and ccoords is None:
+        print("Unfortunately, horizontal divergence is only available for cartesian interpolation at the moment")
     #Vorticity
     if "VOX" in vardict.keys() and ccoords is not None:
         xvortd = get_xvort(vardict, gridprops, ccoords)

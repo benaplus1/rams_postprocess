@@ -284,6 +284,10 @@ def get_wadv_v(vardict, ccoords):
     wadvvd = -vardict["WC"].data*np.gradient(vardict["WC"].data, ccoords["z"], axis = 0)
     return wadvvd
 
+def get_horizdiv(vardict, gridprops):
+    divd = np.gradient(vardict["UC"].data, gridprops["dx"], axis = 2)+np.gradient(vardict["VC"].data, gridprops["dx"], axis = 1)
+    return divd
+
 def get_xvort(vardict, gridprops, ccoords):
     xvortd = np.gradient(vardict["WC"].data, gridprops["dx"], axis = 1)-np.gradient(vardict["VC"].data, ccoords["z"].values, axis = 0)
     return xvortd
