@@ -29,7 +29,7 @@ def derivvarinit():
    
     dvardict["TR"] = outvar(varname = "TempRho", longname = "Density Temperature", stdname = None, offline = True, vartype = "3d", ramsname = "TR", invar = ["THETA", "PI", "RV", "RTP"], unitfactor = 1, decnum = 3, units = "K")
     
-    dvardict["RHO"] = outvar(varname = "Rho", longname = "Air Density", stdname = "air_density", offline = True, vartype = "3d", ramsname = "Rho", invar = ["THETA", "PI", "RV"], unitfactor = 1, decnum = 4, units = "kg m**-3")
+    dvardict["RHO"] = outvar(varname = "Rho", longname = "Air Density", stdname = "air_density", offline = True, vartype = "3d", ramsname ="RHO", invar = ["THETA", "PI", "RV"], unitfactor = 1, decnum = 4, units = "kg m**-3")
 
     dvardict["DIV"] = outvar(varname = "HorizDiv", longname = "Horizontal Divergence", stdname = None, offline = True, vartype = "3d", ramsname = "DIV", invar = ["UC", "VC"], unitfactor = 1, decnum = 7, units = "s**-1")
     
