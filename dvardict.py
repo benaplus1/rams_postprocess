@@ -210,7 +210,7 @@ if __name__ == "__main__":
     # "ThermalBuoy": "BUOY_TEMP", "VapBuoy": "BUOY_VAP", "CondBuoy": "BUOY_COND", "PPrimeBuoy": "BUOY_PPRIME", "VPPGF": "VPPGF"}
 
     dvardict = derivvarinit()
-    dvarnamedict = {dvardict[key].ramsname:dvardict[key].varname for key in dvardict.keys()}
+    dvarnamedict = {dvardict[key].varname:dvardict[key].ramsname for key in dvardict.keys()}
     print(dvarnamedict)
 
     with open("dvardictfile", "wb") as wfile:
