@@ -11,7 +11,7 @@ Parallelized using the builtin concurrent.futures package in Python
 Required dependencies: python3.9 or later, numpy, pandas, xarray, h5netcdf, astropy
 
 Currently, there's very little documentation. I will work on that going forward. To run the postprocessing code, do the following:
-1. Make/modify a namelist file (There's an example file called "postprocessfile" in the directory. Don't change the names of the prompts, but do change the answers on the line below to what you want (where your RAMS output files are, where you want your files to go, what type of interpolation, what variables, etc).
+1. Make/modify a namelist file (There's an example file called "ppf_filename" in the directory. Don't change the names of the prompts, but do change the answers on the line below to what you want (where your RAMS output files are, where you want your files to go, what type of interpolation, what variables, etc).
 2. Run the postprocessing code with "python3 postprocess.py" in the terminal.
 3. When the text prompt asks "Is there a file you'd like to use for post-processing settings? Yes or No?", answer "yes"
 4. When prompted for a file path, enter the path to the namelist file you just made.
