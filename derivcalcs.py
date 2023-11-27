@@ -252,12 +252,12 @@ def get_dewpoint(vardict):
     return dewpointd
 
 def get_cloudtopheight(rawfile, rawzsub):
-    cloudtopheightd = np.nanmax(np.where(rawfile["RCP"][1:-1,1:-1,1:-1].values+rawfile["RPP"][1:-1,1:-1,1:-1].values>1e-4, rawzsub, np.nan), axis = 0)
+    cloudtopheightd = np.nanmax(np.where(rawfile["RCP"][1:-1,1:-1,1:-1].values+rawfile["RPP"][1:-1,1:-1,1:-1].values>1e-5, rawzsub, np.nan), axis = 0)
     #Again, like above, using the full sigma-z grid for the same reason as above - the user's analyais domain top might be below the heights of the highest clouds
     return cloudtopheightd
 
 def get_cloudbaseheight(rawfile, rawzsub):
-    cloudbaseheightd = np.nanmin(np.where(rawfile["RCP"][1:-1,1:-1,1:-1].values+rawfile["RPP"][1:-1,1:-1,1:-1].values>1e-4, rawzsub, np.nan), axis = 0)
+    cloudbaseheightd = np.nanmin(np.where(rawfile["RCP"][1:-1,1:-1,1:-1].values+rawfile["RPP"][1:-1,1:-1,1:-1].values>1e-5, rawzsub, np.nan), axis = 0)
     return cloudbaseheightd
 
 def get_cloudtoppres(rawfile):
@@ -265,7 +265,7 @@ def get_cloudtoppres(rawfile):
         pressureraw
     except:
         pressureraw = 1000*(rawfile["PI"][1:-1,1:-1,1:-1].values/C_P)**(C_P/R_D)
-    cloudtoppresd = np.nanmin(np.where(rawfile["RCP"][1:-1,1:-1,1:-1].values+rawfile["RPP"][1:-1,1:-1,1:-1].values>1e-4, pressureraw, np.nan), axis = 0)
+    cloudtoppresd = np.nanmin(np.where(rawfile["RCP"][1:-1,1:-1,1:-1].values+rawfile["RPP"][1:-1,1:-1,1:-1].values>1e-5, pressureraw, np.nan), axis = 0)
     return cloudtoppresd
 
 def get_cloudbasepres(rawfile):
@@ -273,7 +273,7 @@ def get_cloudbasepres(rawfile):
         pressureraw
     except:
         pressureraw = 1000*(rawfile["PI"][1:-1,1:-1,1:-1].values/C_P)**(C_P/R_D)
-    cloudbasepresd = np.nanmax(np.where(rawfile["RCP"][1:-1,1:-1,1:-1].values+rawfile["RPP"][1:-1,1:-1,1:-1].values>1e-4, pressureraw, np.nan), axis = 0)
+    cloudbasepresd = np.nanmax(np.where(rawfile["RCP"][1:-1,1:-1,1:-1].values+rawfile["RPP"][1:-1,1:-1,1:-1].values>1e-5, pressureraw, np.nan), axis = 0)
     return cloudbasepresd
 
 def get_wadv_h(vardict, gridprops):
