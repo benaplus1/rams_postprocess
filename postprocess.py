@@ -68,11 +68,13 @@ def multbyfactor(vardict, timedict):
         elif type(vardict[vkey].unitfactor) != str:
             vardict[vkey].data = vardict[vkey].data*vardict[vkey].unitfactor
     return vardict
+    #This multiplies data by a certain factor right before output (previously, and for all derived variable calculatins, they are stored in SI units). For example, this can convert condensate from kg/kg to g/kg, or convert instantaneous latent heating from K to K/s
 
 def roundvars(vardict):
     for vkey in vardict.keys():
         vardict[vkey].data = vardict[vkey].data.round(decimals = vardict[vkey].decnum)
     return vardict
+    #Round data to certain number of decimals. This is done right before output, after multbyfactor. For all derived variable calculations, full precision is used.
 
 def get_cartds(rnameflag, vardict, ccoords):
     mvars = xr.Dataset(coords = ccoords)
@@ -82,6 +84,7 @@ def get_cartds(rnameflag, vardict, ccoords):
     varkeyssnow = [vkey for vkey in vardict.keys() if vardict[vkey].vartype == "2dSnow"]
     varkeys3d = [vkey for vkey in vardict.keys() if vardict[vkey].vartype == "3d"]
     for vkey in varkeys3d:
+        #rnameflag controls whether "RAMS-style" names should be used (rnameflag = 1) or "verbose-style" names should be used (rnameflag = 0) when building the NetCDF
         if rnameflag == 0:
             mvars[vardict[vkey].varname] = xr.DataArray(vardict[vkey].data, coords = ccoords.drop_dims(["patch", "soillev", "snowlev"]).coords, dims = ["z", "y", "x"])
             mvars[vardict[vkey].varname].attrs = {"longname": vardict[vkey].longname, "stdname": vardict[vkey].stdname if vardict[vkey].stdname is not None else "None", "units": vardict[vkey].units, "offline_calculated_variable": str(vardict[vkey].offline)}
@@ -289,7 +292,7 @@ def get_sigds(rnameflag, vardict, scoords):
 
 
 def cartinterp(gridprops, top2d, atop, rawfile, vardict):
-    varkeys3d = [vkey for vkey in vardict.keys() if vardict[vkey].vartype == "3d" and vardict[vkey].vector == False] #We already did the vector quantities; don't need to do them again!
+    varkeys3d = [vkey for vkey in vardict.keys() if vardict[vkey].vartype == "3d" and vardict[vkey].vector == False] #Separate the vector (u,v,w) and scalar quantities, since the vector quantities have special interpolation requirements
     rawzfull = get_zact(gridprops, top2d)
     ccoords = gen_coords_cart(gridprops, top2d, atop)
     if "WC" in vardict.keys():
@@ -311,15 +314,9 @@ def cartinterp(gridprops, top2d, atop, rawfile, vardict):
         print(f"Interpolating VP --> {[vardict['VP'].varname, vardict['VP'].ramsname][rnameflag]}")
         vardict["VP"].data = get_cartv(rawfile["VP"].values, gridprops, rawzfull, ccoords["z"].values)
 
-    st = perf_counter()
-    # print(f"Interpolating 3D Scalars at {ftime.strftime('%Y-%m-%d-%H%M%S')}")
-
     vdictlist = [{"data": rawfile[ramsname].values, "ramsname": vardict[ramsname].ramsname, "varname": vardict[ramsname].varname} for ramsname in varkeys3d]
     cartsclpart = partial(get_cartscl_multiprocess, rnameflag, rawzfull, ccoords["z"].values)
-    # interpscllist = []
-    # for entry in vdictlist:
-    #     interpscllist.append(cartsclpart(entry))
-    varppool = ProcessPoolExecutor(max_workers = 4)
+    varppool = ProcessPoolExecutor(max_workers = 4) #Parallellize the interpolation of scalar quantities
     try:
         interpscllist = list(varppool.map(cartsclpart, vdictlist))
         varppool.shutdown()
@@ -329,7 +326,7 @@ def cartinterp(gridprops, top2d, atop, rawfile, vardict):
 
     print("Done interpolation!")
     for i, entry in enumerate(interpscllist):
-        vardict[entry["ramsname"]].data = entry["data"]
+        vardict[entry["ramsname"]].data = entry["data"] #Interpolated data is always stored in the post-processing code using "RAMS-style" names. It will still be output using "verbose-style" names if the user chooses that option
         interpscllist[i]["data"] = 1 #This is done to prevent data duplication and hogging memory
     del interpscllist
     del vdictlist
@@ -421,33 +418,38 @@ def postprocess(prepath, postpath, filetype, gridprops, interptype, atop, userpr
     #             "silt_loam": 1273000, "loam": 1214000, "sandy_clay_loam": 1177000,
     #             "silty_clay_loam": 1319000, "clay_loam": 1227000, "sandy_clay": 1177000,
     #             "silty_clay": 1151000, "clay": 1088000, "peat": 874000};
+    #This is for a "soil temperature" variable, which I still need to add.
     # afiletime = timedict["afiletime"]; timestep = timedict["dt"]
 
     st = perf_counter()
     print(f"Post-Processing data at {ftime.strftime('%Y-%m-%d-%H%M%S')}")
     print(f"Reading File {prepath}a-{filetype}-{ftime.strftime('%Y-%m-%d-%H%M%S')}-g{ngrid}.h5")
     rawfile = xr.open_dataset(f"{prepath}a-{filetype}-{ftime.strftime('%Y-%m-%d-%H%M%S')}-g{ngrid}.h5", engine = "h5netcdf", phony_dims = "sort")
+    #Get xarray dataset of RAMS output
     top2d = rawfile["TOPT"].values
-    # rawzfull = get_zact(gridprops, top2d)
     datavarlist = list(rawfile.data_vars)
-    gridprops["glat"] = rawfile["GLAT"].values; gridprops["glon"] = rawfile["GLON"].values
+    gridprops["glat"] = rawfile["GLAT"].values; gridprops["glon"] = rawfile["GLON"].values #Assign 2D arrays of latitude and longitude to gridprops
     if uservars == "all":
         uservars = datavarlist
 
     fullvarlist = fillvarlist()
-    vardict = gen_vardict(uservars, datavarlist, fullvarlist); del fullvarlist #A dictionary is necessary here because I'll need to access certain variables for derivedvars
+    vardict = gen_vardict(uservars, datavarlist, fullvarlist); del fullvarlist
+
+    #!!! 
+    #Very important! vardict is where all the data for variables (native RAMS variables and derived variables) is stored in the post-processing code. This a dictionary of the form
+    #{"rams-style name": outvar}, where outvar is a custom class containing data for the variable, the variable's RAMS-style name, the verbose-style name, the longname, a standard CF-compliant name (if applicable), the variable type (3D, 2D, 2DPatch, 2DSoil, or 2DSnow), the factor by which to multiply the variable before output, the units of the variable, if the varible is a vector, and which variables are used to calculate it (if it's a derived variable). All variables are stored in vardict using their *"RAMS-style" name*, not their *"verbose-style" name*!!
+    #!!!
+
     varkeys2d = [vkey for vkey in vardict.keys() if vardict[vkey].vartype == "2d"]
     varkeyspatch = [vkey for vkey in vardict.keys() if vardict[vkey].vartype == "2dPatch"]
     varkeyssoil = [vkey for vkey in vardict.keys() if vardict[vkey].vartype == "2dSoil"]
     varkeyssnow = [vkey for vkey in vardict.keys() if vardict[vkey].vartype == "2dSnow"]
-    # raise Exception("Everything up to interpolation worked ok!")
     interptype = interptype.lower()
     if interptype == "cart":
         ccoords = gen_coords_cart(gridprops, top2d, atop)
         print("Interpolating 3D Scalars to Cartesian Coordinates")
         vardict = cartinterp(gridprops, top2d, atop, rawfile, vardict)
         
-
     elif interptype == "pressure":
         rawpresfull = (rawfile["PI"].values/1004)**(1004/287)
         pcoords = gen_coords_pressure(gridprops, top2d, rawpresfull, userpreslvs)
@@ -485,23 +487,23 @@ def postprocess(prepath, postpath, filetype, gridprops, interptype, atop, userpr
 
     st = perf_counter()
     print("Beginning Unit Conversion")
-    vardict = multbyfactor(vardict, timedict)
+    vardict = multbyfactor(vardict, timedict) #Multiply units by the factor specified in the "unitfactor" field of their "outvar" class, to convert from kg/kg to g/kg or K to K/S, etc.
     et = perf_counter()
     print(f"Unit Conversion at {ftime.strftime('%Y-%m-%d-%H%M%S')} took {et-st:.2f} seconds to calculate")
     print("Rounding variables to save disk space")
-    vardict = roundvars(vardict)
+    vardict = roundvars(vardict) #Round variables
     if interptype == "cart":
-        mvars = get_cartds(rnameflag, vardict, ccoords)
+        mvars = get_cartds(rnameflag, vardict, ccoords) #Build xarray dataset to save as a NetCDF. Here, variables will be assigned using either "RAMS-style" names or "verbose-style" names, depending on the user's choice. This choice is reflected in "rnameflag". "rnameflag" is 0 if the user chooses "verbose-style" names, and 1 if the user chooses "RAMS-style" names.
     elif interptype == "pressure":
         mvars = get_presds(rnameflag, vardict, pcoords)
     elif interptype == "sigma":
         mvars = get_sigds(rnameflag, vardict, scoords)
     print(f"Saving file at time {ftime.strftime('%Y-%m-%d-%H%M%S')}!")
-    comp = {"compression": "gzip", "compression_opts": 6}
+    comp = {"compression": "gzip", "compression_opts": 6} #Compress the file slightly to save space
     xrenc = {var: comp for var in mvars.data_vars}
-    if not os.path.exists(f"{postpath}"):
+    if not os.path.exists(f"{postpath}"): #Make a directory for the post-processed files if one doesn't already exist
         os.mkdir(f"{postpath}")
-    mvars.to_netcdf(f"{postpath}mvars-{interptype}-{ftime.strftime('%Y-%m-%d-%H%M%S')}-g{ngrid}.nc", engine = "h5netcdf", encoding = xrenc)
+    mvars.to_netcdf(f"{postpath}mvars-{interptype}-{ftime.strftime('%Y-%m-%d-%H%M%S')}-g{ngrid}.nc", engine = "h5netcdf", encoding = xrenc) #Save files as .nc, not .h5
     mvars.close(); del mvars
     print(f"File at {ftime.strftime('%Y-%m-%d-%H%M%S')} saved!")
     return ftime.strftime('%Y-%m-%d-%H%M%S')
@@ -509,9 +511,9 @@ def postprocess(prepath, postpath, filetype, gridprops, interptype, atop, userpr
 # if __name__ == "__main__":
 
 starttime = perf_counter()
-isuserfile = input("Is there a file you'd like to use for post-processing settings? Yes or No? ")
+isuserfile = input("Is there a namelist file you'd like to use for post-processing settings? Yes or No? ")
 if isuserfile.strip().upper() not in ["YES", "NO"]:
-    raise Exception("Answer the question, Flatlander!")
+    raise Exception("Please answer 'yes' or 'no'. ")
 
 if isuserfile.strip().upper() == "YES":
     userfpath = input("Enter the path of the post-processing settings file: ")
@@ -548,7 +550,7 @@ elif isuserfile.strip().upper() == "NO":
     rnameflag = input("Use the *RAMS* variable names, or *verbose* variable names in post-processed NetCDF files? ")
     derivvarin = input("Enter the list of derived variables you'd like to output, as comma-separated entries (a full list of available derived variables is avilable in comments at the top of derivedvars.py). Leave blank to not output any derived quantities. Enter *all* to output all derived quantities available for your output file. Enter *nomomentum* to output all variables except momentum budgets, which are quite slow to calculate: ")
 if not os.path.exists(folderpath):
-    raise Exception("Output file directory not found!")
+    raise Exception("Parent folder of output file directory not found!")
 
 if not os.path.exists(ramsinpath):
     raise Exception("RAMSIN not found!")
@@ -614,7 +616,7 @@ elif derivvarin is not None:
     dvarnamedict = pickle.load(dvfile)
     dvfile.close()
     if rnameflag == 0:
-        derivvars = [dvarnamedict[st.strip()] for st in derivvarin.split(",")] #This converts from the verbose derived variable names that will be output to the "RAMS-style" variable names used in the backend
+        derivvars = [dvarnamedict[st.strip()] for st in derivvarin.split(",")] #This converts from the "verbose-style" derived variable names that will be output to the "RAMS-style" variable names used in the backend
     elif rnameflag == 1:
         derivvars = [st.strip().upper() for st in derivvarin.split(",")]
 
@@ -633,7 +635,7 @@ if isuserfile.strip().upper() == "NO":
 hydropath = "hydroparams.csv"
 tlist = date_range(instime, inetime, freq = timedelta(seconds = timedict["afiletime"])).to_pydatetime()
 postpartial = partial(postprocess, prepath, postpath, ftype, gridprops, interptype, atop, userpreslvs, kernname, timedict, window, hydropath, uservars, derivvars, rnameflag)
-with ProcessPoolExecutor(max_workers = numworkers) as ppool:
+with ProcessPoolExecutor(max_workers = numworkers) as ppool: #Parallellize the post-processing routine across time
     flist = print(list(ppool.map(postpartial, tlist)))
 print("Running Post-Processing Routine")
 # for time in tlist:

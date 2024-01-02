@@ -124,7 +124,7 @@ def get_derivedvars(vardict, derivvars, rawfile, gridprops, window, kernname, rn
         
         
 
-    #Now, actually calculate the data associated with each derived variable
+    #Now, actually calculate the data associated with each derived variable. Note that all variables are stored using "RAMS-style" names. Only when the NETCDF is actually output will they be reassigned to use "verbose-style" names if the user chooses that option.
     if "TS" in vardict.keys():
         srftempd = get_srftemp(rawfile)
         vardict["TS"].data = srftempd

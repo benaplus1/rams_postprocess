@@ -1,8 +1,10 @@
 import pickle
 from varinit import outvar
 
+#This file sets up a dictionary used to convert from "RAMS-style" names of derived variables to "verbose-style" names when reading in from the post-processing namelist. For example, the variable "VertIntIce" can also be output as "VII", depending on whether the user wants variables more consistent with the original RAMS name scheme, or ones that have more detail in their names. All variables have a "longname" attribute, which can be accessed by calling ds["variablename"].longname, if either the "RAMS-style" or "verbose-style" names do not give enough information.
+
 def derivvarinit():
-    dvardict = {} #This dictionary contains *all* possible derived variables. Based on conditions in derivedvars_2.py, only some will be calculated
+    dvardict = {} #This dictionary contains *all* possible derived variables. Based on conditions in derivedvars.py, only some will be calculated
     dvardict["TS"] = outvar(varname = "SrfTemp", longname = "Terrain-Following Air Temperature at the Lowest Model Level", stdname = None, offline = True, vartype = "2d", ramsname = "TS", invar = ["THETA", "PI"], unitfactor = 1, decnum = 3, units = "K")
 
     dvardict["PS"] = outvar(varname = "SrfPres", longname = "Terrain-Following Pressure at the Lowest Model Level", stdname = None, offline = True, vartype = "2d", ramsname = "PS", invar = ["PI"], unitfactor = 1, decnum = 3, units = "hPa")
@@ -148,7 +150,6 @@ def derivvarinit():
     dvardict["VIT"] = outvar(varname = "VertIntCond", longname = "Verticaly Integrated Total Condensate", stdname = None, offline = True, vartype = "2d", ramsname = "VIT", invar = ["RTP", "RV"], unitfactor = 1, decnum = 4, units = "mm")
     
     #Hydrometeor Diameters
-    #I don't need to use the gamma function for this, thankfully!
     dvardict["DCP"] = outvar(varname = "CloudDiam", longname = "Mass Mean Cloud Droplet Diameter", stdname = None, offline = True, vartype = "3d", ramsname = "DCP", invar = ["RCP", "CCP"], unitfactor = 1, decnum = 4, units = "mm")
 
     dvardict["DDP"] = outvar(varname = "DrizzleDiam", longname = "Mass Mean Drizzle Drop Diameter", stdname = None, offline = True, vartype = "3d", ramsname = "DDP", invar = ["RDP", "CDP"], unitfactor = 1, decnum = 3, units = "mm")

@@ -7,14 +7,14 @@ from numpy import float32, float64
 
 class outvar:
     def __init__(self, varname = "", longname = "", stdname = None, vector = False, offline = False, vartype = "", nptype = float32, ramsname = "", invar = None, unitfactor = "", decnum = 3, units = "", data = None):
-        #varname (string) is the name of the variable as referred to in the xarray dataset
+        #varname (string) is the "verbose-style" name of the variable in the output NetCDF file, if the user chooses to use "verbose-style names".
         #longname (string) is the "long name" of the variable as shown in the xarray attributes
         #stdname (string) is the "standard name" according to the cf naming conventions (if applicable), to be used in the xarray attributes
         #vector is whether this variable is a vector (u,v,w) that needs a special interpolation routine
         #offline (bool) is whether this variable is simply a renamed and truncated version of a raw RAMS variable (ex. Theta, RainPrecipRate) or an offline-calculated variable (like Pressure or CloudTopHeight)
         #vartype (string) is whether this variable is 3d (z,y,x), 2d (y,x), 2d-patch (patch, y, x), 2d-snow (patch, snowlev, y, x), or 2d-soil (patch, soillev, y, x)
         #ntype (numpy dtype) is the dtype to use (float32 or float64) for the variable
-        #ramsname (string) is the name of the raw RAMS variable read in before truncation and renaming. Derived variables have a "ramsname" which is in a similar style to the native RAMS variables
+        #ramsname (string) is the name of the raw RAMS variable read in before truncation and renaming. Derived variables have a "ramsname" which is in a similar style to the native RAMS variables. All variables are stored in the backend using "RAMS-style" names.
         #invar (list of strings) is the other variables (if any) that need to be passed in to calculate this variable. Only applies for offline-calculated variables
         #decnum (int) is the number of decimal points to use for storing this variable. This will only come into play after all unit conversions
         #unitfactor (float or string) is the factor by which this variable needs to be modified by its original units (for example, 2.5*10^6 for SFLUX_R (kg/m^2*s) to LatHeatFlux (W/m^2) or 1000 for RCP (kg/kg) to CloudMassMix (g/kg), 1000/afiletime for AGGREGATET to Aggregation (change in mixing ratio due to aggregation in the previous timestep)). These unit conversions are only done after all offline variables have been calculated
@@ -38,6 +38,8 @@ class outvar:
         return(f"Variable: {self.longname}. CF Standard Name: {self.stdname}. RAMS-Format Name: {self.ramsname}; Verbose Name: {self.varname}; Offline Variable: {self.offline}; Variable Dimensions: {self.vartype}; Vector Variable: {self.vector}; Other Variables Used to Calculate it: {self.invar}; Factor by Which This Variable is Multiplied at the End to Get Final Units: {self.unitfactor}; Number of Decimals Used to Store Variable: {self.decnum}; Units of Variable: {self.units};")
 def fillvarlist():
     #Fullvarlist initializes a list of all RAMS variables which can be output (except KPP variables, which aren't implemented yet). The function below, get_vardict, actually figures out which variables are available and the user wants to include. The post-processing routine assumes that you want the same variables for all times in the post-processing. If you want to analyze new variables at certain times, restart the program with a new starttime and a new variable list file.
+
+    #All variables can be output using the original RAMS variable names, or "verbose-style" names. For example, the variable "DrizzleVapGrowth" can also be output as "VAPDRIZT", depending on whether the user wants variables more consistent with the original RAMS name scheme, or ones that have more detail in their names. All variables have a "longname" attribute, which can be accessed by calling ds["variablename"].longname, if either the "RAMS-style" or "verbose-style" names do not give enough information.
     varlist = []
     #3D Vector variables
     varlist.append(outvar(varname = "u", longname = "Eastward Wind Velocity", stdname = "eastward_wind", vector = True, vartype = "3d", nptype = float32, ramsname = "UC", invar = None, unitfactor = 1, decnum = 3, units = "m s**-1"))
@@ -413,3 +415,4 @@ def gen_vardict(uservarlist, datavarlist, fullvarlist):
         elif entry.ramsname in uservarset and entry.ramsname not in datavarset:
             print(f"User requested variable {entry.ramsname}, but {entry.ramsname} is not present in the RAMS output file!")
     return vdict
+    #This returns a dictionary to convert from the original RAMS variable names to the "verbose-style" names when reading in from the post-processing namelist.
