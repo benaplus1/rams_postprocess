@@ -30,8 +30,8 @@ Procedure for adding a new derived variable (*not* a native RAMS output variable
 4. Add a code section in the "get_derivedvars" function to call the calculation function and append that variable to the "vardict" dictionary containing all other post-processed data.
 4a. An example of this section is as follows:
     if "NEWVARRAMSNAME" in vardict.keys():
-        newvard = get_newvar(vardict) #Depending on the variable you want to calculate, you may want to use the "rawfile" with sigma-z coordinates instead of the interpolated "vardict". For example, 
-                                      #PWAT is  calculated using get_pwat(rawfile), since that uses the sigma-z coordinates for more accurate integration
+        newvard = get_newvar(vardict) #Depending on the variable you want to calculate, you may want to use the "rawfile" with sigma-z coordinates instead of the interpolated "vardict". For example,# 
+                                      #PWAT is  calculated using get_pwat(rawfile), since that uses the sigma-z coordinates for more accurate integration#
         vardict["NEWVARRAMSNAME"].data = newvard
         print(f"Found variable {[vardict['NEWVARRAMSNAME'].varname, vardict['NEWVARRAMSNAME'].ramsname][rnameflag]}!")
 
