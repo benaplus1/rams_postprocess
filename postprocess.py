@@ -44,12 +44,13 @@ def read_userfile(fpath):
         userdict = {"folderpath": folderpath, "postpath": postpath, "filetype": filetype, "ramsinpath": ramsinpath, "interptype": interptype, "atop": atop, "userpreslvs": userpreslvs, "instime": instime, "inetime": inetime, "numworkers": numworkers, "ngrid": ngrid, "uservars": uservars, "rnameflag": rnameflag, "derivvars": derivvars, "ywininput": ywininput, "xwininput": xwininput, "kernname": kernname}
     return userdict
 
-def get_timedict(ramsinpath, ngrid):
+def get_timedict(ramsinpath, ngrid, ftype):
     # Get grid properties from RAMS header file
     with open(ramsinpath) as f:
         mlist = f.read().splitlines()
         dtlong = float([st for st in mlist if st.lstrip().startswith("DTLONG")][0].lstrip("DTLONG = ").split(",")[0])
-        afiletime = int([st for st in mlist if st.lstrip().startswith("FRQSTATE")][0].lstrip("FRQSTATE =").split(".,")[ngrid-1])
+        filetime_ramsin_varname = "FRQSTATE" if ftype == "A" else "FRQLITE"
+        afiletime = int([st for st in mlist if st.lstrip().startswith(filetime_ramsin_varname)][0].lstrip(f"{filetime_ramsin_varname} =").split(".,")[ngrid-1])
 
         tdict = {"dt": dtlong, "afiletime": afiletime}
 #                 print(f'RAMS Z-levels: {i} {zm[i]:.1f} {zt[i]:.1f}')
@@ -587,7 +588,7 @@ prepath = f"{folderpath}/"
 postpath = f"{postpath}/"
 ftype = filetype.strip("* ").upper()
 gridprops = get_gprops(headpath, ngrid)
-timedict = get_timedict(ramsinpath, ngrid)
+timedict = get_timedict(ramsinpath, ngrid, ftype)
 if uservarin.strip("* ") != "all":
     uservars = [st.strip().upper() for st in uservarin.split(",")]
 else:
